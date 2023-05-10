@@ -1,0 +1,238 @@
+---
+title: "EDA on US Crime Data"
+author: "Faisal Amir Maz"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: cosmo
+    highlight: tango
+    toc: true
+    toc_float:
+      collapsed: true
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+link to the dataset: https://www.kaggle.com/datasets/jgiigii/uscrimesdataset
+
+
+```{r}
+# Libraries
+
+library(dplyr)
+library(lubridate)
+```
+# Wrangling
+
+# Reading The Data
+```{r}
+#read the data
+crime <- read.csv("Crime.csv")
+head(crime)
+```
+
+```{r}
+glimpse(crime)
+```
+
+```{r}
+length(unique(crime$Crime.Name3))
+table(crime$Crime.Name3)
+```
+
+## Summary on unique values on every column
+Offence Code: having 342 unique values
+CR Number has 200k unique
+Nibrs Code has 58 unique values https://ucr.fbi.gov/nibrs/2011/resources/nibrs-offense-codes
+67 cities
+11 states (305k crime happened in State MD (Maryland))
+8 agencies (MCPD has 200k  (montgomery county Police Departement))
+99 places
+16 sectors
+57 Beats
+807 PRA
+33 street types
+Crime.Name1 has 6 unique values
+Crime.Name2 has 60 unique values
+Crime.Name3 has 337 unique values
+
+```{r}
+sum(duplicated(crime))
+```
+No duplicated data
+
+
+## Converting the data types
+```{r}
+crime <- crime %>% 
+  mutate(State = as.factor(State)) %>% 
+  mutate(Sector = as.factor(Sector)) %>% 
+  mutate(NIBRS.Code = as.factor(NIBRS.Code)) %>% 
+  mutate(Street.Type = as.factor(Street.Type)) %>% 
+  mutate(Agency = as.factor(Agency)) %>% 
+  mutate(Crime.Name1 = as.factor(Crime.Name1))
+```
+
+
+```{r}
+crime$Dispatch.Date...Time <-  mdy_hms(crime$Dispatch.Date...Time)
+crime$Start_Date_Time <-  mdy_hms(crime$Start_Date_Time)
+crime$End_Date_Time <-  mdy_hms(crime$End_Date_Time)
+tail(crime)
+
+# abis ini select data tahunnya dari 2019 ke 2020 aja (buat liat perbedaan tahun setelah pandemi dansebelum pandemi)
+# lebih spesifik (kalo 2 tahun masih berat pake 1 tahun aja yaitu 2020)
+
+```
+
+
+# Exploratory
+```{r}
+crime %>% 
+  group_by(Crime.Name1) %>% 
+  summarise(n())
+```
+
+```{r}
+name1_other <- crime %>% 
+  filter(Crime.Name1=="Other")
+
+unique(name1_other$Crime.Name2)
+```
+
+```{r}
+
+crime$year <- year(crime$Start_Date_Time)
+crime$month <- month(crime$Start_Date_Time, label = T)
+crime$day_of_week <- wday(crime$Start_Date_Time, label = T)
+crime$hour <- hour(crime$Start_Date_Time)
+```
+
+```{r}
+head(crime)
+```
+
+
+## Group By Year
+
+
+```{r}
+crime_year <- crime %>% 
+  group_by(year) %>% 
+  summarise(n())
+
+crime_year
+```
+
+## Group by Month
+```{r}
+crime_month <- crime %>% 
+  group_by(month) %>% 
+  summarise(n())
+
+crime_month
+plot(crime$month)
+```
+
+## Group by Day of Week
+```{r}
+crime_dayofweek <- crime %>% 
+  group_by(day_of_week) %>% 
+  summarise(count = n())
+
+crime_dayofweek
+plot(crime$day_of_week)
+```
+## Further Groupping 
+```{r}
+crime %>% 
+  group_by(hour) %>% 
+  summarise(count = n()) %>% 
+  arrange(-count)
+
+```
+```{r}
+crime_place <- crime %>% 
+  group_by(Place) %>% 
+  summarise(count = n()) %>% 
+  arrange(-count)
+
+crime_place
+```
+
+
+```{r}
+crime %>% 
+  group_by(Crime.Name1) %>% 
+  summarise(count = n())
+
+plot(crime$Crime.Name1)
+```
+```{r}
+sum(is.na(crime$Crime.Name1))
+```
+```{r}
+crime %>% 
+  group_by(City) %>% 
+  summarise(count = n()) %>% 
+  arrange(-count)
+```
+```{r}
+sum(is.na(crime))
+```
+
+```{r}
+nrow(crime)
+```
+```{r}
+dn <- function(x){
+  if(x > 6 & x < 18){x <- "day"}
+  else{x <- "night"}
+}
+```
+
+```{r}
+
+```
+
+```{r}
+crime$day_night <- sapply(crime$hour, dn)
+```
+
+```{r}
+head(crime)
+```
+
+```{r}
+crime$day_night <- as.factor(crime$day_night)
+
+```
+```{r}
+table(crime$day_night)
+```
+
+```{r}
+crime$case_duration <- difftime(
+  time1 = crime$End_Date_Time,
+  time2 = crime$Start_Date_Time,
+  units = "hours"
+)
+
+
+head(crime)
+```
+
+```{r}
+duration_clean <- na.omit(crime$case_duration)
+
+range(duration_clean)
+```
+# Visualization
+```{r}
+library(ggplot2)
+library()
+```
+
